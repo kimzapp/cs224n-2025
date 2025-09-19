@@ -84,6 +84,7 @@ def train_for_epoch(parser, train_data, dev_data, optimizer, loss_func, batch_si
 
     @return dev_UAS (float): Unlabeled Attachment Score (UAS) for dev data
     """
+
     parser.model.train() # Places model in "train" mode, i.e. apply dropout layer
     n_minibatches = math.ceil(len(train_data) / batch_size)
     loss_meter = AverageMeter()
