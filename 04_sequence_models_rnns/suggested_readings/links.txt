@@ -1,0 +1,3 @@
+Andrej Karparthy'blog: https://karpathy.github.io/2015/05/21/rnn-effectiveness/
+Ian Goodfellow's book: https://www.deeplearningbook.org/contents/rnn.html
+Chomsky: https://norvig.com/chomsky.html
