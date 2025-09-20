@@ -73,10 +73,19 @@ class ParserModel(nn.Module):
         ### 
         ### See the PDF for hints.
 
-        self.embed_to_hidden_weight = nn.init.xavier_uniform_(nn.Parameter(torch.empty((self.embed_size * self.n_features, self.hidden_size))))
-        self.embed_to_hidden_bias = nn.init.uniform_(nn.Parameter(torch.empty((1, self.hidden_size))))
-        self.hidden_to_logits_weight = nn.init.xavier_uniform_(nn.Parameter(torch.empty((self.hidden_size, self.n_classes))))
-        self.hidden_to_logits_bias = nn.init.uniform_(nn.Parameter(torch.empty((1, self.n_classes))))
+        # embed to hidden
+        self.embed_to_hidden_weight = nn.Parameter(torch.empty(self.embed_size * self.n_features, self.hidden_size))
+        nn.init.xavier_uniform_(self.embed_to_hidden_weight)
+        self.embed_to_hidden_bias = nn.Parameter(torch.empty(self.hidden_size))
+        nn.init.uniform_(self.embed_to_hidden_bias)
+
+        # hidden to logits
+        self.hidden_to_logits_weight = nn.Parameter(torch.empty(self.hidden_size, self.n_classes))
+        nn.init.xavier_uniform_(self.hidden_to_logits_weight)
+        self.hidden_to_logits_bias = nn.Parameter(torch.empty(self.n_classes))
+        nn.init.uniform_(self.hidden_to_logits_bias)
+
+        # drop out
         self.dropout = nn.Dropout(p=dropout_prob)
 
         ### END YOUR CODE
@@ -110,11 +119,8 @@ class ParserModel(nn.Module):
         ###     View: https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
         ###     Flatten: https://pytorch.org/docs/stable/generated/torch.flatten.html
 
-        embedding_vectors = []
-        for feature_vector in w:
-            indexes = torch.tensor(range(len(feature_vector)))
-            embedding_vectors.append(self.embeddings.index_select(dim=0, index=indexes).view((1, -1)))
-        x = torch.cat(embedding_vectors, dim=0)
+        x = self.embeddings[w]
+        x = x.view(x.size(0), -1)
 
         ### END YOUR CODE
         return x
