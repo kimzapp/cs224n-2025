@@ -81,7 +81,15 @@ class NMT(nn.Module):
         ###     Dropout Layer:
         ###         https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
 
-
+        self.post_embed_cnn = nn.Conv1d(in_channels=embed_size, out_channels=embed_size, kernel_size=2, padding='same')
+        self.encoder = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, bidirectional=True, bias=True)
+        self.decoder = nn.LSTMCell(input_size=hidden_size, hidden_size=hidden_size, bias=True)
+        self.h_projection = nn.Linear(in_features=2*hidden_size, out_features=hidden_size, bias=False)
+        self.c_projection = nn.Linear(in_features=2*hidden_size, out_features=hidden_size, bias=False)
+        self.att_projection = nn.Linear(in_features=2*hidden_size, out_features=hidden_size, bias=False)
+        self.combined_output_projection = nn.Linear(in_features=3*hidden_size, out_features=hidden_size, bias=False)
+        self.target_vocab_projection = nn.Linear(in_features=hidden_size, out_features=len(vocab.tgt), bias=False)
+        self.dropout = nn.Dropout(p=dropout_rate)
 
         ### END YOUR CODE
 
@@ -176,11 +184,18 @@ class NMT(nn.Module):
         ###     Tensor Permute:
         ###         https://pytorch.org/docs/stable/generated/torch.permute.html
 
-
-
-
-
-
+        X = self.model_embeddings.source(source_padded)
+        X_permuted = torch.permute(X, dims=(1, 2, 0))
+        post_embeded = self.post_embed_cnn(X_permuted)
+        post_embeded_permuted = torch.permute(post_embeded, dims=(2, 0, 1))
+        enc_hiddens, (last_hidden, last_cell) = self.encoder(pack_padded_sequence(post_embeded_permuted, source_lengths))
+        enc_hiddens = pad_packed_sequence(enc_hiddens, total_length=source_padded.size(0))[0]
+        enc_hiddens = torch.permute(enc_hiddens, dims=(1, 0, 2))
+        init_decoder_hidden = last_hidden.permute(dims=(1, 0, 2)).flatten(start_dim=1)
+        h_0 = self.h_projection(init_decoder_hidden)
+        init_decoder_cell = last_cell.permute(dims=(1, 0, 2)).flatten(start_dim=1)
+        c_0 = self.c_projection(init_decoder_cell)
+        dec_init_state = (h_0, c_0)
 
         ### END YOUR CODE
 
